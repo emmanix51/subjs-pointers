@@ -18,6 +18,7 @@ export async function POST(request: Request) {
     const subject = formData.get("subject") as string;
     const term = formData.get("term") as string;
     const type = formData.get("type") as string;
+    const originalFileName = formData.get("fileName") as string;
 
     if (!file || !subject || !term || !type) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
@@ -33,15 +34,27 @@ export async function POST(request: Request) {
     }
 
     const ext = file.name.split(".").pop() || "";
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-    const filePath = path.join(uploadDir, fileName);
+    let safeFileName = (originalFileName || file.name)
+      .toLowerCase()
+      .replace(/[^a-z0-9.-]/g, "-")
+      .replace(/-+/g, "-");
+    
+    // For PDFs, use original name without timestamp
+    // For images, keep unique suffix in case of duplicates
+    let finalFileName = safeFileName;
+    if (type === "pictures") {
+      const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+      finalFileName = `${uniqueSuffix}-${safeFileName}`;
+    }
+    
+    const filePath = path.join(uploadDir, finalFileName);
 
     await writeFile(filePath, buffer);
 
     return NextResponse.json({ 
       success: true, 
-      url: `/uploads/${subject}/${term}/${type}/${fileName}`,
-      fileName: file.name
+      url: `/uploads/${subject}/${term}/${type}/${finalFileName}`,
+      fileName: originalFileName || file.name
     });
   } catch (error) {
     console.error("Upload error:", error);

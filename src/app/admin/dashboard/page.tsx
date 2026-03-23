@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Upload, Trash2, Image, FileText, LogOut, Plus, Edit2, X, BookOpen, Check } from "lucide-react";
 
@@ -153,16 +153,17 @@ export default function AdminDashboard() {
     setSubjectDescription("");
   };
 
-  const handleFileUpload = async (fileList: FileList | null) => {
-    if (!fileList || fileList.length === 0) return;
+  const uploadFiles = async (files: File[]) => {
+    if (files.length === 0) return;
 
     setUploading(true);
-    const uploadPromises = Array.from(fileList).map(async (file) => {
+    const uploadPromises = files.map(async (file) => {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("subject", selectedSubject);
       formData.append("term", selectedTerm);
       formData.append("type", selectedType);
+      formData.append("fileName", file.name);
 
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       return res.json();
@@ -172,6 +173,37 @@ export default function AdminDashboard() {
     setUploading(false);
     loadFiles();
   };
+
+  const handleFileUpload = async (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+    const files = Array.from(fileList);
+    await uploadFiles(files);
+  };
+
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (selectedType !== "pictures") return;
+      
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith("image/")) {
+          const file = item.getAsFile();
+          if (file) {
+            const timestamp = Date.now();
+            const ext = item.type.split("/")[1] || "png";
+            const newFile = new File([file], `pasted-image-${timestamp}.${ext}`, { type: item.type });
+            uploadFiles([newFile]);
+            break;
+          }
+        }
+      }
+    };
+
+    document.addEventListener("paste", handlePaste);
+    return () => document.removeEventListener("paste", handlePaste);
+  }, [selectedType, selectedSubject, selectedTerm]);
 
   const handleDeleteFile = async (url: string) => {
     const filePath = url.replace("/", "");

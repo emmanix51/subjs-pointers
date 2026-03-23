@@ -4,6 +4,26 @@
       "slug": "cc102",
       "title": "CC102",
       "description": "Fundamentals of programming"
+    },
+    {
+      "slug": "cc106",
+      "title": "CC106",
+      "description": "Applications Development and Emerging Technologies"
+    },
+    {
+      "slug": "edm101",
+      "title": "EDM101",
+      "description": "Enterprise Data Management"
+    },
+    {
+      "slug": "cs-prof-el-2",
+      "title": "CS PROF EL 2",
+      "description": "Computational Science"
+    },
+    {
+      "slug": "cs-prof-el-3",
+      "title": "CS PROF EL 3",
+      "description": "Intelligent Systems"
     }
   ]
 }
